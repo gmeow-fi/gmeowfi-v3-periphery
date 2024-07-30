@@ -1,8 +1,13 @@
 import { ethers } from 'hardhat'
 import { ContractFactory, Contract } from 'ethers'
 import { deployContract, deployContractWithArtifact } from './helper'
-import TransparentUpgradeableProxy from '@openzeppelin/contracts/build/contracts/TransparentUpgradeableProxy.json'
-import ProxyAdmin from '@openzeppelin/contracts/build/contracts/ProxyAdmin.json'
+import {
+  NFTDescriptor,
+  TransparentUpgradeableProxy,
+  NonfungibleTokenPositionDescriptor,
+  ProxyAdmin,
+  NonfungiblePositionManager,
+} from '../typechain-types'
 
 async function main() {
   const [deployer] = await ethers.getSigners()
@@ -10,35 +15,20 @@ async function main() {
 
   const wethLabelHex = ethers.encodeBytes32String('WETH')
   const v3Factory = {
-    address: '0x22Ae5d5a0Aa4d2763BE2A9090E1ea85E9BBE1f6b',
+    address: '0xaE218256bB7aD772F04c78D5fCb64E9AC73A22DA',
   }
 
   const weth = await ethers.getContractAt('IERC20', '0x4200000000000000000000000000000000000006')
 
-  // const swapRouter = await deployContract(
-  //   'SwapRouter',
-  //   [v3Factory.address, await weth.getAddress()],
-  //   'SwapRouter',
-  //   {}
-  // );
-  //   const swapRouter = await ethers.getContractAt('SwapRouter', '0x9705d528B4567A4e093C4eFBE17EC0330FA090b1')
-  // const nftDescriptor = await deployContract(
-  //   'NFTDescriptor',
-  //   [],
-  //   'NFTDescriptor',
-  //   {}
-  // );
-  //   const nftDescriptor = await ethers.getContractAt('NFTDescriptor', '0x51382276dc57E7d5e5dc4D9C71689d26b78f6b00')
+  // const swapRouter = await deployContract('SwapRouter', [v3Factory.address, await weth.getAddress()], 'SwapRouter', {})
+  const swapRouter = await ethers.getContractAt('SwapRouter', '0x73c489cbf37CbADb4102E57C43C51C2105095E7D')
+  // const nftDescriptor = await deployContract<NFTDescriptor>('NFTDescriptor', [], 'NFTDescriptor', {})
+  const nftDescriptor = await ethers.getContractAt('NFTDescriptor', '0x6FE99b9979Fe66913042c5B84144D44de8fBBbED')
 
-  // const proxyAdmin = await deployContractWithArtifact(
-  //   ProxyAdmin,
-  //   [],
-  //   'ProxyAdmin',
-  //   {}
-  // );
-  //   const proxyAdmin = await ethers.getContractAt('ERC20', '0x134163976C055D445BD8882A4973411068C658C4')
+  // const proxyAdmin = await deployContract<ProxyAdmin>('ProxyAdmin', [], 'ProxyAdmin', {})
+  const proxyAdmin = await ethers.getContractAt('ProxyAdmin', '0xa5aF797aA833025aC5C79F5B4612D5a71C78E810')
 
-  // const nftPositionDescriptor = await deployContract(
+  // const nftPositionDescriptor = await deployContract<NonfungibleTokenPositionDescriptor>(
   //   'NonfungibleTokenPositionDescriptor',
   //   [await weth.getAddress(), wethLabelHex],
   //   'NonfungibleTokenPositionDescriptor',
@@ -47,27 +37,23 @@ async function main() {
   //       NFTDescriptor: await nftDescriptor.getAddress(),
   //     },
   //   }
-  // );
+  // )
   const nftPositionDescriptor = await ethers.getContractAt(
     'NonfungibleTokenPositionDescriptor',
-    '0xc9CEAC64EDe99BF803b49EF9E19BCeC305C8b13a'
+    '0xF3610490Cfe9E4dd622F439b6a95bcFA33975e07'
   )
 
-  // const nftPositionDescriptorProxy = await deployContractWithArtifact(
-  //   TransparentUpgradeableProxy,
-  //   [
-  //     await nftPositionDescriptor.getAddress(),
-  //     await proxyAdmin.getAddress(),
-  //     '0x',
-  //   ],
-  //   'NonfungibleTokenPositionDescriptorProxy',
-  //   {}
-  // );
-  const nftPositionDescriptorProxy = await ethers.getContractAt(
-    'NonfungibleTokenPositionDescriptor',
-    '0x22a38B643c1eeB39E6804434d43605aE946bedAc'
+  const nftPositionDescriptorProxy = await deployContract<TransparentUpgradeableProxy>(
+    'TransparentUpgradeableProxy',
+    [await nftPositionDescriptor.getAddress(), await proxyAdmin.getAddress(), '0x'],
+    'NonfungibleTokenPositionDescriptorProxy',
+    {}
   )
-  const nftPositionManager = await deployContract(
+  // const nftPositionDescriptorProxy = await ethers.getContractAt(
+  //   'NonfungibleTokenPositionDescriptor',
+  //   '0x22a38B643c1eeB39E6804434d43605aE946bedAc'
+  // )
+  const nftPositionManager = await deployContract<NonfungiblePositionManager>(
     'NonfungiblePositionManager',
     [v3Factory.address, await weth.getAddress(), await nftPositionDescriptorProxy.getAddress()],
     'NonfungiblePositionManager',
